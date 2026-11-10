@@ -42,6 +42,7 @@
     $('#strip').innerHTML = LOCKS.map((l) => `<span class="sl ${isOpen(l.id) ? 'on' : ''}" style="--c:${l.color}" title="${esc(l.name)}">${isOpen(l.id) ? l.letter : '🔒'}</span>`).join('');
     const p = $('#points'); p.hidden = !S.start; p.querySelector('b').textContent = score();
     $('#btnSave').hidden = !S.start;
+    $('#btnReset').hidden = !S.start;
   }
   const fmt = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
   function tick() {
@@ -627,13 +628,28 @@
       <textarea class="rep" id="rep" readonly rows="12">${esc(report())}</textarea>
       <div class="task-btns"><button class="btn go" id="pCopy">📋 Copy our results</button></div>
       <p class="copied" id="pMsg" aria-live="polite"></p>
-      <details class="reset"><summary>Start again from zero</summary><p class="small">This deletes all your answers and points on this device.</p><button class="btn danger" id="pReset">↺ Delete and start again</button></details>`);
+      <div class="task-btns"><button class="btn danger" id="pReset">↺ New team: start again</button></div>`);
     $('#pCopy').addEventListener('click', async () => {
       const ok = await copyText(report(), $('#rep'));
       $('#pMsg').className = 'copied ' + (ok ? 'good' : 'bad');
       $('#pMsg').textContent = ok ? '✅ Copied! Paste it in a private comment in Google Classroom.' : 'Select all the text and copy it.';
     });
-    $('#pReset').addEventListener('click', () => { S = blank(); save(); closeModal(); go('start'); });
+    $('#pReset').addEventListener('click', openReset);
+  }
+
+  /* ───────── start again (new team) ───────── */
+  function openReset() {
+    openModal(`
+      <h2 class="h">↺ Start again with a new team</h2>
+      <p>This deletes <b>everything</b> on this device:</p>
+      <ul class="small"><li>the names of the team</li><li>the timer (it goes back to 00:00)</li><li>all the open locks, answers and points</li></ul>
+      <p>Do you want to keep your work? Tap <b>💾 Save</b> first and keep the code.</p>
+      <div class="task-btns"><button class="btn danger" id="rsYes">↺ Yes, delete and start again</button><button class="btn" id="rsNo">No, go back</button></div>`);
+    $('#rsYes').addEventListener('click', () => {
+      S = blank(); save(); closeModal(); go('start');
+      const n = document.querySelector('#app input'); if (n) n.focus();
+    });
+    $('#rsNo').addEventListener('click', closeModal);
   }
 
   const helpHTML = () => `<h2 class="h">❓ How to play</h2>${stepsHTML()}
@@ -644,6 +660,7 @@
 
   $('#btnProg').addEventListener('click', openProgress);
   $('#btnSave').addEventListener('click', openSave);
+  $('#btnReset').addEventListener('click', openReset);
   $('#btnHelp').addEventListener('click', () => { openModal(helpHTML()); $('#hOk').addEventListener('click', closeModal); });
   $('#btnHome').addEventListener('click', () => go('start'));
 
